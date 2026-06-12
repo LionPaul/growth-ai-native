@@ -30,3 +30,8 @@ O script irá processar os dados, cuspir a avaliação estatística no terminal 
 
 A análise não olha apenas para o aumento de vendas totais (GMV), pois grupos com taxas de cashback agressivas tendem a gerar volume, mas destruir a margem. 
 O script foca em otimizar o **Lucro** (Comissão - Cashback) e aplica testes de significância estatística (P-Value < 0.05) para garantir que a variante vencedora não é fruto do acaso.
+
+## 📈 Tracker de Histórico (Sheets / CSV)
+
+Para garantir o acompanhamento gerencial e evitar a perda de histórico dos testes:
+1. A cada execução, o script alimenta automaticamente o arquivo local `historico_testes_ab.csv` contendo o resumo consolidado, a conclusão estatística e a decisão recomendada. Esta abordagem evita problemas de autenticação e vazamento de chaves de API da Google Cloud.
