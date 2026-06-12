@@ -2,7 +2,6 @@ import pandas as pd
 import scipy.stats as stats
 import sys
 import os
-
 def carregar_e_limpar_dados(caminho_arquivo):
     """
     Carrega o dataset de testes A/B e limpa as colunas financeiras.
@@ -29,7 +28,6 @@ def carregar_e_limpar_dados(caminho_arquivo):
     df['Data'] = pd.to_datetime(df['Data'])
     
     return df
-
 def calcular_metricas_ab(df):
     """
     Agrupa os dados por variante e calcula as principais métricas de negócio.
@@ -41,7 +39,6 @@ def calcular_metricas_ab(df):
         'cashback': 'sum',
         'vendas totais': 'sum'
     }).reset_index()
-
     # Calcular métricas derivadas
     # 1. Ticket Médio = Vendas Totais / Compradores
     df_agrupado['ticket_medio'] = df_agrupado['vendas totais'] / df_agrupado['compradores']
@@ -59,7 +56,6 @@ def calcular_metricas_ab(df):
         df_agrupado[col] = df_agrupado[col].round(2)
         
     return df_agrupado
-
 def validar_teste_estatistico(df, grupo_controle, grupo_teste):
     """
     Realiza um Teste T independente comparando dois grupos parametrizados.
@@ -72,7 +68,6 @@ def validar_teste_estatistico(df, grupo_controle, grupo_teste):
     if lucro_g1.empty or lucro_g2.empty:
         print(f"Erro: Os grupos '{grupo_controle}' ou '{grupo_teste}' não foram encontrados no dataset.")
         return
-
     t_stat, p_valor = stats.ttest_ind(lucro_g1, lucro_g2, equal_var=False)
     
     print(f"--- RESULTADO DO TESTE ESTATÍSTICO ({grupo_controle} vs {grupo_teste}) ---")
@@ -84,7 +79,39 @@ def validar_teste_estatistico(df, grupo_controle, grupo_teste):
         print("💡 CONCLUSÃO ESTRATÉGICA: A diferença de lucro é ESTATISTICAMENTE SIGNIFICATIVA.")
     else:
         print("⚠️ CONCLUSÃO ESTRATÉGICA: A diferença NÃO é estatisticamente significativa.")
-
+def registrar_historico(nome_parceiro, grupo_controle, grupo_teste, df_resultados, p_valor):
+    """
+    Registra o resultado do teste no arquivo de tracker consolidado.
+    """
+    # Extrai o lucro de cada grupo para saber quem ganhou
+    lucro_controle = df_resultados[df_resultados['Grupos de usuários'] == grupo_controle]['lucro_meliuz'].values[0]
+    lucro_teste = df_resultados[df_resultados['Grupos de usuários'] == grupo_teste]['lucro_meliuz'].values[0]
+    # Define o resultado e a decisão baseados na estatística
+    if p_valor < 0.05:
+        vencedor = grupo_controle if lucro_controle > lucro_teste else grupo_teste
+        perdedor = grupo_teste if lucro_controle > lucro_teste else grupo_controle
+        resultado = f"Significativo (p-valor: {p_valor:.4f}). {vencedor} gerou mais lucro."
+        decisao = f"Manter {vencedor} e descontinuar {perdedor}."
+    else:
+        resultado = f"Inconclusivo (p-valor: {p_valor:.4f}). Sem diferença estatística."
+        decisao = "Manter o teste rodando para coletar mais dados."
+    # Cria a linha do registro
+    novo_registro = pd.DataFrame([{
+        'Data da Análise': pd.Timestamp.now().strftime('%Y-%m-%d'),
+        'Nome do Teste': f"Teste de Growth - {nome_parceiro.capitalize()}",
+        'Descrição': f"Análise de rentabilidade: {grupo_controle} vs {grupo_teste}",
+        'Resultado': resultado,
+        'Decisão Tomada': decisao
+    }])
+    arquivo_historico = 'historico_testes_ab.csv'
+    
+    # Se o arquivo já existe, anexa (append). Se não, cria um novo.
+    if os.path.exists(arquivo_historico):
+        novo_registro.to_csv(arquivo_historico, mode='a', header=False, index=False, sep=';')
+    else:
+        novo_registro.to_csv(arquivo_historico, mode='w', header=True, index=False, sep=';')
+        
+    print(f"✅ Resultado consolidado salvo com sucesso no tracker: '{arquivo_historico}'")
 if __name__ == "__main__":
     # Permite passar o nome do arquivo direto no terminal: python script.py dataset_02_parceiroB.csv
     if len(sys.argv) > 1:
@@ -108,11 +135,24 @@ if __name__ == "__main__":
         df_resultados.to_csv(nome_arquivo_saida, index=False, sep=';')
         print(f"\nSucesso! O arquivo '{nome_arquivo_saida}' foi gerado e salvo.")
         
-        # Identifica dinamicamente os grupos para testar (ex: pega o grupo de maior lucro vs maior volume)
-        # Para simplificar na execução direta, vamos pegar o primeiro e o último grupo da lista
+        # Identifica dinamicamente os grupos
         grupos_unicos = sorted(df_limpo['Grupos de usuários'].unique())
         if len(grupos_unicos) >= 2:
-            validar_teste_estatistico(df_limpo, grupo_controle=grupos_unicos[0], grupo_teste=grupos_unicos[-1])
+            grupo_controle = grupos_unicos[0]
+            grupo_teste = grupos_unicos[-1]
+            
+            # Adiciona lucro_diario caso ainda não exista no df_limpo para extrair p_valor
+            if 'lucro_diario' not in df_limpo.columns:
+                df_limpo['lucro_diario'] = df_limpo['comissão'] - df_limpo['cashback']
+            # Precisamos extrair o p_valor do teste para tomar a decisão
+            lucro_g1 = df_limpo[df_limpo['Grupos de usuários'] == grupo_controle]['lucro_diario'].dropna()
+            lucro_g2 = df_limpo[df_limpo['Grupos de usuários'] == grupo_teste]['lucro_diario'].dropna()
+            t_stat, p_valor = stats.ttest_ind(lucro_g1, lucro_g2, equal_var=False)
+            
+            validar_teste_estatistico(df_limpo, grupo_controle, grupo_teste)
+            
+            # Aqui chamamos a nova função que cria a linha na planilha de tracker!
+            registrar_historico(nome_base, grupo_controle, grupo_teste, df_resultados, p_valor)
         
     except FileNotFoundError:
         print(f"Erro: Arquivo '{caminho}' não encontrado.")
