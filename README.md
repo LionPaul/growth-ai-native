@@ -1,6 +1,6 @@
-# 🚀 Automação de Análise de Testes A/B - Growth Méliuz
+# 🚀 Automação de Análise de Testes A/B - Growth
 
-Este repositório contém a solução para o desafio técnico de Estágio em Growth AI-Native da Méliuz. O objetivo principal é automatizar e escalar a análise de testes A/B, reduzindo um gargalo de horas para poucos segundos, garantindo precisão estatística e foco no impacto real de negócio (Lucro vs. GMV).
+Este repositório contém a solução para o desafio técnico de Estágio em Growth AI-Native. O objetivo principal é automatizar e escalar a análise de testes A/B, reduzindo um gargalo de horas para poucos segundos, garantindo precisão estatística e foco no impacto real de negócio (Lucro vs. GMV).
 
 ## 🧠 A Arquitetura: Abordagem Híbrida (AI-Native)
 
