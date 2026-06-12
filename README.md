@@ -29,4 +29,4 @@ O script irá processar os dados, cuspir a avaliação estatística no terminal 
 ## 📊 Critérios de Decisão e Negócio
 
 A análise não olha apenas para o aumento de vendas totais (GMV), pois grupos com taxas de cashback agressivas tendem a gerar volume, mas destruir a margem. 
-O script foca em otimizar o **Lucro da Méliuz** (Comissão - Cashback) e aplica testes de significância estatística (P-Value < 0.05) para garantir que a variante vencedora não é fruto do acaso.
+O script foca em otimizar o **Lucro** (Comissão - Cashback) e aplica testes de significância estatística (P-Value < 0.05) para garantir que a variante vencedora não é fruto do acaso.
