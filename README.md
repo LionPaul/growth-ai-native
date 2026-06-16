@@ -1,37 +1,105 @@
-# 🚀 Automação de Análise de Testes A/B - Growth
+# 🟡A/B Cashback Analyzer
 
-Este repositório contém a solução para o desafio técnico de Estágio em Growth AI-Native. O objetivo principal é automatizar e escalar a análise de testes A/B, reduzindo um gargalo de horas para poucos segundos, garantindo precisão estatística e foco no impacto real de negócio (Lucro vs. GMV).
+Solução reutilizável para análise automática de testes A/B de cashback do time de Growth.
 
-## 🧠 A Arquitetura: Abordagem Híbrida (AI-Native)
+## O que faz
 
-Para garantir que a solução seja de fácil usabilidade para qualquer pessoa do time, mas sem abrir mão do rigor matemático, optei por uma **arquitetura híbrida**:
+Recebe qualquer CSV de teste A/B no schema padrão da e entrega:
 
-1. **O Cérebro (Linguagem Natural):** O arquivo `prompt_mestre.txt` atua como o orquestrador. Ele contém instruções sistêmicas claras para que IAs (como Claude, Cursor ou ChatGPT) entendam o papel de Analista de Growth e saibam exatamente o que fazer com os dados.
-2. **O Motor (Código Determinístico):** O script `analise_teste_ab.py` executa o trabalho pesado de forma confiável. Como LLMs costumam falhar em cálculos complexos, o script garante o ETL seguro (limpando strings financeiras), a agregação das métricas e a aplicação do **Teste T de Welch** para validar a significância estatística dos resultados.
+- **Relatório HTML completo** — apresentável para gestores, com métricas consolidadas, gráficos SVG inline e testes de significância estatística
+- **Decisão acionável** — qual variante escalar para 100% do tráfego, com justificativa quantitativa
+- **Registro automático** em `resultados_testes.csv` — planilha de acompanhamento de todos os testes rodados
 
-## 🛠️ Como Utilizar
+## Requisitos
 
-Esta solução foi desenhada para ser agnóstica e rodar perfeitamente em ferramentas AI-Native.
+```bash
+pip install pandas scipy
+```
 
-**Opção 1: Via Cursor IDE / Claude Code (Recomendado)**
-1. Abra a pasta deste projeto na sua ferramenta.
-2. Abra o chat da IA e cole o conteúdo do `prompt_mestre.txt`.
-3. Anexe o dataset desejado (ex: `@dataset_01_parceiroA.csv`).
-4. A IA executará o script Python automaticamente de forma invisível e retornará o relatório gerencial em texto, além de gerar o CSV consolidado na pasta.
+Python 3.8+
 
-**Opção 2: Via Terminal (Execução Manual)**
-Caso queira rodar a automação sem o intermédio de uma IA, basta executar:
-\`\`\`bash
-python analise_teste_ab.py <nome_do_arquivo.csv>
-\`\`\`
-O script irá processar os dados, cuspir a avaliação estatística no terminal e salvar o resumo em um novo arquivo CSV.
+## Como usar
 
-## 📊 Critérios de Decisão e Negócio
+```bash
+# Análise de um dataset
+python analyze.py caminho/para/dataset.csv
 
-A análise não olha apenas para o aumento de vendas totais (GMV), pois grupos com taxas de cashback agressivas tendem a gerar volume, mas destruir a margem. 
-O script foca em otimizar o **Lucro** (Comissão - Cashback) e aplica testes de significância estatística (P-Value < 0.05) para garantir que a variante vencedora não é fruto do acaso.
+# Exemplos com os 3 datasets do case
+python analyze.py dataset_01_parceiroA.csv
+python analyze.py dataset_02_parceiroB.csv
+python analyze.py dataset_03_parceiroC.csv
+```
 
-## 📈 Tracker de Histórico (Sheets / CSV)
+Ao rodar, são gerados automaticamente:
+- `reports/relatorio_parceiro_x.html` — relatório visual do teste
+- `resultados_testes.csv` — linha adicionada com o resultado
 
-Para garantir o acompanhamento gerencial e evitar a perda de histórico dos testes:
-1. A cada execução, o script alimenta automaticamente o arquivo local `historico_testes_ab.csv` contendo o resumo consolidado, a conclusão estatística e a decisão recomendada. Esta abordagem evita problemas de autenticação e vazamento de chaves de API da Google Cloud.
+## Schema esperado dos CSVs
+
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| Data | YYYY-MM-DD | Data da observação |
+| Grupos de usuários | string | Variante do teste (Grupo 1, Grupo 2...) |
+| Parceiro | string | Nome do parceiro |
+| compradores | int | Usuários únicos que compraram no dia |
+| comissão | string (R$) | Comissão paga pelo parceiro |
+| cashback | string (R$) | Cashback distribuído aos usuários |
+| vendas totais | string (R$) | GMV do dia |
+
+## Metodologia
+
+### Métricas principais
+- **Lucro líquido** = comissão − cashback (métrica principal de decisão)
+- **Margem líquida** = lucro líquido / vendas totais
+- **Taxa de cashback** = cashback / vendas totais
+- **ROI do cashback** = vendas totais / cashback
+
+### Testes estatísticos
+- **2 grupos:** t-test independente (Welch)
+- **3+ grupos:** ANOVA one-way + t-tests par a par
+
+### Critério de decisão
+O grupo com maior **lucro líquido total** no período é recomendado para escalar.
+A significância estatística é calculada comparando o melhor vs. o pior grupo em compradores/dia.
+
+### Legenda de significância
+- ★★★ p < 0.01 — Altamente significativo
+- ★★ p < 0.05 — Significativo
+- ★ p < 0.10 — Tendência
+- ✗ p ≥ 0.10 — Não significativo
+
+## Usando com IA (Claude Code / Cursor / ChatGPT)
+
+Esta solução foi desenhada para ser acionada em linguagem natural:
+
+> "Analise o teste A/B do Parceiro D usando o arquivo dataset_04_parceiroD.csv"
+
+O agente roda:
+```bash
+python analyze.py dataset_04_parceiroD.csv
+```
+
+E retorna o relatório HTML + decisão. Nenhuma alteração de código necessária — basta indicar o novo arquivo.
+
+## Resultados dos 3 Datasets
+
+| Parceiro | Período | Decisão | Margem | Cashback | Significância |
+|---|---|---|---|---|---|
+| Parceiro A | Jan–Abr 2011 | Escalar Grupo 1 (4,16% cashback) | 7,22% | 4,16% | ★★ Significativo |
+| Parceiro B | Mai–Jun 2011 | Escalar Grupo 1 (4,00% cashback) | 7,00% | 4,00% | ★★★ Altamente Significativo |
+| Parceiro C | Jul–Ago 2011 | Escalar Grupo 1 (5,00% cashback) | 2,00% | 5,00% | ✗ Não significativo* |
+
+*Parceiro C: diferença não significativa entre grupos. Recomendar extensão do teste ou manter menor cashback pela margem superior.
+
+## Estrutura do projeto
+
+```
+meliuz_ab_analyzer/
+├── analyze.py              # Script principal (único arquivo para rodar)
+├── README.md               # Este arquivo
+├── resultados_testes.csv   # Planilha de acompanhamento (gerada automaticamente)
+└── reports/
+    ├── relatorio_parceiro_a.html
+    ├── relatorio_parceiro_b.html
+    └── relatorio_parceiro_c.html
+```
