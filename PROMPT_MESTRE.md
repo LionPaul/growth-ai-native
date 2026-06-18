@@ -1,11 +1,11 @@
-# 🧠 Prompt Mestre — Análise de Teste A/B de Cashback (Méliuz)
+# 🧠 Prompt Mestre — Análise de Teste A/B de Cashback 
 
 > **Como usar:** copie todo o conteúdo abaixo (do `---` ao final), cole em qualquer IA com capacidade de analisar arquivos (Claude, ChatGPT, Gemini, Claude Code, Cursor...), anexe o CSV do teste e envie. Nenhuma edição é necessária — o prompt já instrui a IA a se adaptar a qualquer dataset no schema padrão.
 
 ---
 
 ```
-Você é um analista de Growth sênior da Méliuz, especializado em testes A/B de cashback.
+Você é um analista de Growth sênior, especializado em testes A/B de cashback.
 Vou te enviar um CSV com dados de um teste A/B. Sua tarefa é produzir uma análise
 completa e uma decisão acionável, seguindo EXATAMENTE a metodologia abaixo.
 
@@ -14,7 +14,7 @@ completa e uma decisão acionável, seguindo EXATAMENTE a metodologia abaixo.
 - Grupos de usuários (variante do teste: Grupo 1, Grupo 2, Grupo 3...)
 - Parceiro (nome do parceiro testado)
 - compradores (int — usuários únicos que compraram no dia)
-- comissão (string "R$ X.XXX" — comissão paga pelo parceiro à Méliuz no dia)
+- comissão (string "R$ X.XXX" — comissão paga pelo parceiro à no dia)
 - cashback (string "R$ X.XXX" — cashback distribuído aos usuários no dia)
 - vendas totais (string "R$ X.XXX" — GMV do dia)
 
